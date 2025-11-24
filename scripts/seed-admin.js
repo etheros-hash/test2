@@ -1,5 +1,3 @@
-const { PrismaClient } = require('@prisma/client')
-const { PrismaPg } = require('@prisma/adapter-pg')
 const { Pool } = require('pg')
 const bcrypt = require('bcryptjs')
 
@@ -8,12 +6,6 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 })
 
-// Create Prisma adapter
-const adapter = new PrismaPg(pool)
-
-// Initialize Prisma Client with adapter
-const prisma = new PrismaClient({ adapter })
-
 async function main() {
   console.log('🌱 Seeding database...')
 
@@ -21,64 +13,60 @@ async function main() {
   const adminPassword = await bcrypt.hash('admin123', 10)
 
   try {
-    const admin = await prisma.user.upsert({
-      where: { email: 'admin@enterprisematch.com' },
-      update: {},
-      create: {
-        email: 'admin@enterprisematch.com',
-        name: 'Admin User',
-        passwordHash: adminPassword,
-        role: 'ADMIN',
-        verified: true,
-      },
-    })
-    console.log('✅ Admin user created:', admin.email)
+    const result = await pool.query(
+      `INSERT INTO "User" (email, name, "passwordHash", role, verified)
+       VALUES ($1, $2, $3, $4, $5)
+       ON CONFLICT (email) DO NOTHING
+       RETURNING email`,
+      ['admin@enterprisematch.com', 'Admin User', adminPassword, 'ADMIN', true]
+    )
+    if (result.rows.length > 0) {
+      console.log('✅ Admin user created:', result.rows[0].email)
+    } else {
+      console.log('ℹ️  Admin user already exists')
+    }
   } catch (error) {
-    console.log('ℹ️  Admin user already exists')
+    console.log('ℹ️  Admin user already exists or error:', error.message)
   }
 
   // Create test enterprise user
   const enterprisePassword = await bcrypt.hash('enterprise123', 10)
 
   try {
-    const enterprise = await prisma.user.upsert({
-      where: { email: 'enterprise@test.com' },
-      update: {},
-      create: {
-        email: 'enterprise@test.com',
-        name: 'Test Enterprise',
-        passwordHash: enterprisePassword,
-        role: 'ENTERPRISE',
-        companyName: 'Test Corp',
-        companySize: '201-1000',
-        industry: 'Technology',
-        verified: true,
-      },
-    })
-    console.log('✅ Enterprise user created:', enterprise.email)
+    const result = await pool.query(
+      `INSERT INTO "User" (email, name, "passwordHash", role, "companyName", "companySize", industry, verified)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       ON CONFLICT (email) DO NOTHING
+       RETURNING email`,
+      ['enterprise@test.com', 'Test Enterprise', enterprisePassword, 'ENTERPRISE', 'Test Corp', '201-1000', 'Technology', true]
+    )
+    if (result.rows.length > 0) {
+      console.log('✅ Enterprise user created:', result.rows[0].email)
+    } else {
+      console.log('ℹ️  Enterprise user already exists')
+    }
   } catch (error) {
-    console.log('ℹ️  Enterprise user already exists')
+    console.log('ℹ️  Enterprise user already exists or error:', error.message)
   }
 
   // Create test builder user
   const builderPassword = await bcrypt.hash('builder123', 10)
 
   try {
-    const builder = await prisma.user.upsert({
-      where: { email: 'builder@test.com' },
-      update: {},
-      create: {
-        email: 'builder@test.com',
-        name: 'Test Builder',
-        passwordHash: builderPassword,
-        role: 'BUILDER',
-        companyName: 'Startup Inc',
-        verified: true,
-      },
-    })
-    console.log('✅ Builder user created:', builder.email)
+    const result = await pool.query(
+      `INSERT INTO "User" (email, name, "passwordHash", role, "companyName", verified)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       ON CONFLICT (email) DO NOTHING
+       RETURNING email`,
+      ['builder@test.com', 'Test Builder', builderPassword, 'BUILDER', 'Startup Inc', true]
+    )
+    if (result.rows.length > 0) {
+      console.log('✅ Builder user created:', result.rows[0].email)
+    } else {
+      console.log('ℹ️  Builder user already exists')
+    }
   } catch (error) {
-    console.log('ℹ️  Builder user already exists')
+    console.log('ℹ️  Builder user already exists or error:', error.message)
   }
 
   console.log('')
@@ -96,6 +84,5 @@ main()
     process.exit(1)
   })
   .finally(async () => {
-    await prisma.$disconnect()
     await pool.end()
   })

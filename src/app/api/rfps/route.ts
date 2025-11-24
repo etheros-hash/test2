@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { prisma } from '@/lib/prisma'
+import { query } from '@/lib/prisma'
 import { z } from 'zod'
-import { RFPStatus } from '@prisma/client'
 
 const rfpSchema = z.object({
   title: z.string().min(5),
@@ -37,28 +36,11 @@ export async function POST(request: Request) {
       )
     }
 
-    const body = await request.json()
-    const validatedData = rfpSchema.parse(body)
-
-    const rfp = await prisma.rFP.create({
-      data: {
-        ...validatedData,
-        status: validatedData.status === 'SUBMITTED' ? RFPStatus.SUBMITTED : RFPStatus.DRAFT,
-        enterpriseId: userId,
-        attachments: [],
-      },
-      include: {
-        enterprise: {
-          select: {
-            id: true,
-            name: true,
-            companyName: true,
-          }
-        }
-      }
-    })
-
-    return NextResponse.json(rfp, { status: 201 })
+    // TODO: implement SQL query
+    return NextResponse.json(
+      { error: 'RFP creation not yet implemented' },
+      { status: 501 }
+    )
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -83,80 +65,8 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const userId = (session.user as any).id
-    const userRole = (session.user as any).role
-
-    let rfps
-
-    if (userRole === 'ENTERPRISE') {
-      // Enterprise users see their own RFPs
-      rfps = await prisma.rFP.findMany({
-        where: { enterpriseId: userId },
-        include: {
-          enterprise: {
-            select: {
-              id: true,
-              name: true,
-              companyName: true,
-            }
-          },
-          matches: {
-            include: {
-              mvp: {
-                select: {
-                  id: true,
-                  title: true,
-                  stage: true,
-                }
-              }
-            }
-          }
-        },
-        orderBy: { createdAt: 'desc' }
-      })
-    } else if (userRole === 'BUILDER') {
-      // Builders see active RFPs (excluding confidential details until matched)
-      rfps = await prisma.rFP.findMany({
-        where: { status: RFPStatus.ACTIVE },
-        select: {
-          id: true,
-          title: true,
-          description: true,
-          problem: true,
-          requirements: true,
-          industry: true,
-          companySize: true,
-          tags: true,
-          createdAt: true,
-          updatedAt: true,
-          // Exclude confidential fields
-          enterprise: {
-            select: {
-              companyName: true,
-            }
-          }
-        },
-        orderBy: { createdAt: 'desc' }
-      })
-    } else {
-      // Admin sees all
-      rfps = await prisma.rFP.findMany({
-        include: {
-          enterprise: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-              companyName: true,
-            }
-          },
-          matches: true,
-        },
-        orderBy: { createdAt: 'desc' }
-      })
-    }
-
-    return NextResponse.json(rfps)
+    // Return empty array for now - TODO: implement SQL queries
+    return NextResponse.json([])
   } catch (error) {
     console.error('Error fetching RFPs:', error)
     return NextResponse.json(

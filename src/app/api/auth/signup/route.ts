@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { query } from '@/lib/prisma'
 import { hashPassword } from '@/lib/auth'
 import { z } from 'zod'
-import { UserRole } from '@prisma/client'
 
 const signupSchema = z.object({
   email: z.string().email(),
@@ -21,11 +20,12 @@ export async function POST(request: Request) {
     const validatedData = signupSchema.parse(body)
 
     // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email: validatedData.email }
-    })
+    const existingResult = await query(
+      'SELECT id FROM "User" WHERE email = $1',
+      [validatedData.email]
+    )
 
-    if (existingUser) {
+    if (existingResult.rows.length > 0) {
       return NextResponse.json(
         { error: 'User already exists' },
         { status: 400 }
@@ -36,25 +36,24 @@ export async function POST(request: Request) {
     const passwordHash = await hashPassword(validatedData.password)
 
     // Create user
-    const user = await prisma.user.create({
-      data: {
-        email: validatedData.email,
+    const result = await query(
+      `INSERT INTO "User" (email, name, "passwordHash", role, "companyName", "companySize", industry, website, verified)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+       RETURNING id, email, name, role`,
+      [
+        validatedData.email,
+        validatedData.name,
         passwordHash,
-        name: validatedData.name,
-        role: validatedData.role as UserRole,
-        companyName: validatedData.companyName,
-        companySize: validatedData.companySize,
-        industry: validatedData.industry,
-        website: validatedData.website,
-      },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-      }
-    })
+        validatedData.role,
+        validatedData.companyName || null,
+        validatedData.companySize || null,
+        validatedData.industry || null,
+        validatedData.website || null,
+        false
+      ]
+    )
 
+    const user = result.rows[0]
     return NextResponse.json(user, { status: 201 })
   } catch (error) {
     if (error instanceof z.ZodError) {

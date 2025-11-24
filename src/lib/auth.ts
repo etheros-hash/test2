@@ -1,8 +1,7 @@
 import { NextAuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
-import { prisma } from './prisma'
+import { query } from './prisma'
 import bcrypt from 'bcryptjs'
-import { UserRole } from '@prisma/client'
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -17,13 +16,16 @@ export const authOptions: NextAuthOptions = {
           return null
         }
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email }
-        })
+        const result = await query(
+          'SELECT id, email, name, role, "passwordHash" FROM "User" WHERE email = $1',
+          [credentials.email]
+        )
 
-        if (!user) {
+        if (result.rows.length === 0) {
           return null
         }
+
+        const user = result.rows[0]
 
         const isPasswordValid = await bcrypt.compare(
           credentials.password,
@@ -44,19 +46,25 @@ export const authOptions: NextAuthOptions = {
     })
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, account }) {
       if (user) {
-        token.id = user.id
-        token.role = (user as any).role
+        return {
+          ...token,
+          id: user.id,
+          role: (user as any).role,
+        }
       }
       return token
     },
     async session({ session, token }) {
-      if (session.user) {
-        (session.user as any).id = token.id
-        (session.user as any).role = token.role
+      return {
+        ...session,
+        user: {
+          ...session.user,
+          id: token.id as string,
+          role: token.role as string,
+        }
       }
-      return session
     }
   },
   pages: {

@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { prisma } from '@/lib/prisma'
+import { query } from '@/lib/prisma'
 import { z } from 'zod'
-import { MVPStatus } from '@prisma/client'
 
 const mvpSchema = z.object({
   title: z.string().min(5),
@@ -41,27 +40,11 @@ export async function POST(request: Request) {
       )
     }
 
-    const body = await request.json()
-    const validatedData = mvpSchema.parse(body)
-
-    const mvp = await prisma.mVP.create({
-      data: {
-        ...validatedData,
-        status: validatedData.status === 'SUBMITTED' ? MVPStatus.SUBMITTED : MVPStatus.DRAFT,
-        builderId: userId,
-      },
-      include: {
-        builder: {
-          select: {
-            id: true,
-            name: true,
-            companyName: true,
-          }
-        }
-      }
-    })
-
-    return NextResponse.json(mvp, { status: 201 })
+    // TODO: implement SQL query
+    return NextResponse.json(
+      { error: 'MVP creation not yet implemented' },
+      { status: 501 }
+    )
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -86,80 +69,8 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const userId = (session.user as any).id
-    const userRole = (session.user as any).role
-
-    let mvps
-
-    if (userRole === 'BUILDER') {
-      // Builders see their own MVPs
-      mvps = await prisma.mVP.findMany({
-        where: { builderId: userId },
-        include: {
-          builder: {
-            select: {
-              id: true,
-              name: true,
-              companyName: true,
-            }
-          },
-          matches: {
-            include: {
-              rfp: {
-                select: {
-                  id: true,
-                  title: true,
-                  industry: true,
-                }
-              }
-            }
-          }
-        },
-        orderBy: { createdAt: 'desc' }
-      })
-    } else if (userRole === 'ENTERPRISE') {
-      // Enterprises see approved MVPs (limited info until matched)
-      mvps = await prisma.mVP.findMany({
-        where: { status: MVPStatus.APPROVED },
-        select: {
-          id: true,
-          title: true,
-          description: true,
-          problem: true,
-          solution: true,
-          techStack: true,
-          stage: true,
-          targetIndustries: true,
-          targetCompanySize: true,
-          tags: true,
-          createdAt: true,
-          builder: {
-            select: {
-              companyName: true,
-            }
-          }
-        },
-        orderBy: { createdAt: 'desc' }
-      })
-    } else {
-      // Admin sees all
-      mvps = await prisma.mVP.findMany({
-        include: {
-          builder: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-              companyName: true,
-            }
-          },
-          matches: true,
-        },
-        orderBy: { createdAt: 'desc' }
-      })
-    }
-
-    return NextResponse.json(mvps)
+    // Return empty array for now - TODO: implement SQL queries
+    return NextResponse.json([])
   } catch (error) {
     console.error('Error fetching MVPs:', error)
     return NextResponse.json(
