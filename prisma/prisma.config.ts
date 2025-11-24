@@ -1,11 +1,7 @@
-import type { MigrateConfig } from 'prisma'
-
-const config: MigrateConfig = {
+export default {
   datasources: {
     db: {
       url: process.env.DATABASE_URL,
     },
   },
 }
-
-export default config

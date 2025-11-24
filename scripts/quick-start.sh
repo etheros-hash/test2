@@ -63,11 +63,25 @@ fi
 
 # Generate Prisma Client
 echo "🔧 Generating Prisma Client..."
-npx prisma generate
+PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1 npx prisma generate || {
+    echo "⚠️  Prisma Client generation failed. Trying db push instead..."
+}
 
-# Run migrations
-echo "🔄 Running database migrations..."
-npx prisma migrate dev --name init
+# Run migrations (or use db push as fallback)
+echo "🔄 Setting up database schema..."
+if PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1 npx prisma migrate dev --name init 2>/dev/null; then
+    echo "✅ Migrations completed successfully"
+else
+    echo "⚠️  Migration failed, trying db push (no migration history)..."
+    if PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1 npx prisma db push 2>/dev/null; then
+        echo "✅ Database schema pushed successfully"
+    else
+        echo "❌ Database setup failed. You may need to:"
+        echo "   1. Check your network connection"
+        echo "   2. Try: PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING=1 npx prisma db push"
+        echo "   3. Or use a cloud database (Supabase, Neon, etc.)"
+    fi
+fi
 
 # Seed database (optional)
 echo ""
