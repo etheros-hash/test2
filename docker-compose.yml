@@ -1,0 +1,44 @@
+# Development environment with PostgreSQL
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: enterprisematch-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: enterprisematch
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Uncomment to run the Next.js app in Docker too
+  # app:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   container_name: enterprisematch-app
+  #   restart: unless-stopped
+  #   ports:
+  #     - "3000:3000"
+  #   environment:
+  #     DATABASE_URL: "postgresql://postgres:postgres@postgres:5432/enterprisematch?schema=public"
+  #     NEXTAUTH_URL: "http://localhost:3000"
+  #     NEXTAUTH_SECRET: "development-secret-change-in-production"
+  #     OPENAI_API_KEY: "${OPENAI_API_KEY}"
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #   volumes:
+  #     - .:/app
+  #     - /app/node_modules
+  #     - /app/.next
+
+volumes:
+  postgres_data:
