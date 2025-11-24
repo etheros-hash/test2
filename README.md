@@ -74,6 +74,8 @@ The current problem is that it's hard for startups to validate their enterprise 
 
 3. **Set up the database**
 
+   **Important**: This project uses Prisma 7, which has breaking changes from Prisma 5.
+
    Generate Prisma Client:
    ```bash
    npx prisma generate
@@ -83,6 +85,8 @@ The current problem is that it's hard for startups to validate their enterprise 
    ```bash
    npx prisma migrate dev --name init
    ```
+
+   **Note**: If you encounter engine download issues, see [PRISMA_7_SETUP.md](./PRISMA_7_SETUP.md) for detailed setup instructions and alternatives.
 
 4. **Run the development server**
    ```bash
@@ -148,6 +152,13 @@ The platform uses the following main entities:
 - `GET /api/matches` - List your matches
 - `POST /api/matches` - Create a match
 - `POST /api/matches/discover` - Discover potential matches with AI
+
+## Prisma 7 Notes
+
+This project uses **Prisma 7.0.0** which has breaking changes:
+- Database connections now use adapters (@prisma/adapter-pg)
+- Connection URLs are configured via `prisma.config.ts` for migrations
+- See [PRISMA_7_SETUP.md](./PRISMA_7_SETUP.md) for complete setup guide
 
 ## Deployment
 
