@@ -1,0 +1,189 @@
+// Prisma Schema for B2B SaaS Platform
+// Connecting enterprise buyers with startup builders
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ENTERPRISE
+  BUILDER
+  ADMIN
+}
+
+enum RFPStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  ACTIVE
+  MATCHED
+  CLOSED
+}
+
+enum MVPStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  ACTIVE
+  MATCHED
+}
+
+enum MatchStatus {
+  PENDING
+  ACCEPTED
+  IN_DISCUSSION
+  NDA_SIGNED
+  PILOT
+  CLOSED
+  DECLINED
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String
+  passwordHash  String
+  role          UserRole
+  companyName   String?
+  companySize   String?
+  industry      String?
+  website       String?
+  bio           String?   @db.Text
+  avatarUrl     String?
+  verified      Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  enterpriseRFPs  RFP[]
+  builderMVPs     MVP[]
+  sentMessages    Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
+  matchesAsEnterprise Match[] @relation("EnterpriseMatches")
+  matchesAsBuilder    Match[] @relation("BuilderMatches")
+
+  @@index([email])
+  @@index([role])
+}
+
+model RFP {
+  id              String      @id @default(cuid())
+  title           String
+  description     String      @db.Text
+  problem         String      @db.Text
+  requirements    String      @db.Text
+  budget          String?
+  timeline        String?
+  industry        String
+  companySize     String
+  isConfidential  Boolean     @default(true)
+  status          RFPStatus   @default(DRAFT)
+  tags            String[]
+  attachments     String[]
+
+  enterpriseId    String
+  enterprise      User        @relation(fields: [enterpriseId], references: [id])
+
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  // Relations
+  matches         Match[]
+
+  @@index([enterpriseId])
+  @@index([status])
+  @@index([industry])
+}
+
+model MVP {
+  id              String      @id @default(cuid())
+  title           String
+  description     String      @db.Text
+  problem         String      @db.Text
+  solution        String      @db.Text
+  techStack       String[]
+  demoUrl         String?
+  videoUrl        String?
+  presentationUrl String?
+  stage           String      // "Concept", "MVP", "Beta", "Production"
+  targetIndustries String[]
+  targetCompanySize String[]
+  isConfidential  Boolean     @default(true)
+  status          MVPStatus   @default(DRAFT)
+  tags            String[]
+  metrics         String?     @db.Text // JSON string for traction metrics
+
+  builderId       String
+  builder         User        @relation(fields: [builderId], references: [id])
+
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  // Relations
+  matches         Match[]
+
+  @@index([builderId])
+  @@index([status])
+  @@index([stage])
+}
+
+model Match {
+  id              String      @id @default(cuid())
+  score           Float       // AI-generated match score (0-100)
+  reasoning       String      @db.Text // AI explanation for the match
+  status          MatchStatus @default(PENDING)
+
+  rfpId           String
+  rfp             RFP         @relation(fields: [rfpId], references: [id])
+
+  mvpId           String
+  mvp             MVP         @relation(fields: [mvpId], references: [id])
+
+  enterpriseId    String
+  enterprise      User        @relation("EnterpriseMatches", fields: [enterpriseId], references: [id])
+
+  builderId       String
+  builder         User        @relation("BuilderMatches", fields: [builderId], references: [id])
+
+  ndaSigned       Boolean     @default(false)
+  ndaSignedAt     DateTime?
+
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  // Relations
+  messages        Message[]
+
+  @@unique([rfpId, mvpId])
+  @@index([enterpriseId])
+  @@index([builderId])
+  @@index([status])
+}
+
+model Message {
+  id              String      @id @default(cuid())
+  content         String      @db.Text
+  isRead          Boolean     @default(false)
+
+  senderId        String
+  sender          User        @relation("SentMessages", fields: [senderId], references: [id])
+
+  recipientId     String
+  recipient       User        @relation("ReceivedMessages", fields: [recipientId], references: [id])
+
+  matchId         String?
+  match           Match?      @relation(fields: [matchId], references: [id])
+
+  createdAt       DateTime    @default(now())
+
+  @@index([senderId])
+  @@index([recipientId])
+  @@index([matchId])
+}
