@@ -49,7 +49,7 @@ export default function Home() {
       {/* Features */}
       <div className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
         <div className="max-w-7xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-12">How It Works</h2>
+          <h2 className="text-3xl font-bold text-center mb-12 text-gray-900">How It Works</h2>
           <div className="grid md:grid-cols-3 gap-8">
             <Card>
               <CardHeader>
@@ -98,45 +98,45 @@ export default function Home() {
         <div className="max-w-7xl mx-auto">
           <div className="grid md:grid-cols-2 gap-12">
             <div>
-              <h2 className="text-3xl font-bold mb-6">For Enterprises</h2>
+              <h2 className="text-3xl font-bold mb-6 text-gray-900">For Enterprises</h2>
               <ul className="space-y-4">
                 <li className="flex items-start">
                   <span className="text-blue-600 mr-2">✓</span>
-                  <span>Access innovative solutions before they hit the market</span>
+                  <span className="text-gray-700">Access innovative solutions before they hit the market</span>
                 </li>
                 <li className="flex items-start">
                   <span className="text-blue-600 mr-2">✓</span>
-                  <span>Work with motivated builders eager to prove their value</span>
+                  <span className="text-gray-700">Work with motivated builders eager to prove their value</span>
                 </li>
                 <li className="flex items-start">
                   <span className="text-blue-600 mr-2">✓</span>
-                  <span>AI-powered matching saves time and resources</span>
+                  <span className="text-gray-700">AI-powered matching saves time and resources</span>
                 </li>
                 <li className="flex items-start">
                   <span className="text-blue-600 mr-2">✓</span>
-                  <span>Complete confidentiality for proprietary information</span>
+                  <span className="text-gray-700">Complete confidentiality for proprietary information</span>
                 </li>
               </ul>
             </div>
 
             <div>
-              <h2 className="text-3xl font-bold mb-6">For Builders</h2>
+              <h2 className="text-3xl font-bold mb-6 text-gray-900">For Builders</h2>
               <ul className="space-y-4">
                 <li className="flex items-start">
                   <span className="text-blue-600 mr-2">✓</span>
-                  <span>Validate your enterprise idea with real customers</span>
+                  <span className="text-gray-700">Validate your enterprise idea with real customers</span>
                 </li>
                 <li className="flex items-start">
                   <span className="text-blue-600 mr-2">✓</span>
-                  <span>Go from 0 to 1 with your first pilot customers</span>
+                  <span className="text-gray-700">Go from 0 to 1 with your first pilot customers</span>
                 </li>
                 <li className="flex items-start">
                   <span className="text-blue-600 mr-2">✓</span>
-                  <span>Get matched with enterprises that have immediate needs</span>
+                  <span className="text-gray-700">Get matched with enterprises that have immediate needs</span>
                 </li>
                 <li className="flex items-start">
                   <span className="text-blue-600 mr-2">✓</span>
-                  <span>Protected intellectual property and NDAs</span>
+                  <span className="text-gray-700">Protected intellectual property and NDAs</span>
                 </li>
               </ul>
             </div>
